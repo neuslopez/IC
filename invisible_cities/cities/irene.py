@@ -21,6 +21,8 @@ import tables as tb
 
 from .. types.ic_types import minmax
 from .. database       import load_db
+from .. database.load_db       import dbdet
+
 
 from .. reco                  import tbl_functions        as tbl
 from .. reco                  import  peak_functions      as pkf
@@ -46,11 +48,12 @@ from .  components import WfType
 from .  components import wf_from_files
 
 
+
 @city
 def irene(files_in, file_out, compression, event_range, print_mod, run_number,
           n_baseline, n_mau, thr_mau, thr_sipm, thr_sipm_type,
           s1_lmin, s1_lmax, s1_tmin, s1_tmax, s1_rebin_stride, s1_stride, thr_csum_s1,
-          s2_lmin, s2_lmax, s2_tmin, s2_tmax, s2_rebin_stride, s2_stride, thr_csum_s2, thr_sipm_s2):
+          s2_lmin, s2_lmax, s2_tmin, s2_tmax, s2_rebin_stride, s2_stride, thr_csum_s2, thr_sipm_s2, db_detector):
     if   thr_sipm_type.lower() == "common":
         # In this case, the threshold is a value in pes
         sipm_thr = thr_sipm
@@ -66,8 +69,12 @@ def irene(files_in, file_out, compression, event_range, print_mod, run_number,
 
     #### Define data transformations
 
+    print(dbdet.new)
+    print(db_detector)
+
+    
     # Raw WaveForm to Corrected WaveForm
-    rwf_to_cwf       = fl.map(deconv_pmt(run_number, n_baseline),
+    rwf_to_cwf       = fl.map(deconv_pmt(db_detector, run_number, n_baseline),
                               args = "pmt",
                               out  = "cwf")
 
@@ -168,7 +175,7 @@ def build_pmap(run_number,
                     stride       = s2_stride,
                     rebin_stride = s2_rebin_stride)
 
-    datapmt = load_db.DataPMT(run_number)
+    datapmt = load_db.DataPMT(db_detector, run_number)
     pmt_ids = datapmt.SensorID[datapmt.Active.astype(bool)].values
 
     def build_pmap(ccwf, s1_indx, s2_indx, sipmzs): # -> PMap
@@ -179,7 +186,7 @@ def build_pmap(run_number,
 
 
 def get_number_of_active_pmts(run_number):
-    datapmt = load_db.DataPMT(run_number)
+    datapmt = load_db.DataPMT(db_detector, run_number)
     return np.count_nonzero(datapmt.Active.values.astype(bool))
 
 

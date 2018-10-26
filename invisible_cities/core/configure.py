@@ -8,6 +8,9 @@ import os
 from os.path import basename
 from enum    import Enum
 
+from .. database       import load_db
+#from .. database.load_db       import dbdet
+
 from collections     import namedtuple
 from collections     import defaultdict
 from collections.abc import MutableMapping
@@ -87,6 +90,7 @@ def make_config_file_reader():
 
     builtins = __builtins__.copy()
     builtins.update(vars(units))
+    builtins.update(vars(load_db))
     # TODO: move setting of extra 'builtins' elsewhere
     builtins['all']  = EventRange.all
     builtins['last'] = EventRange.last
