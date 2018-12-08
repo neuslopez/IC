@@ -26,6 +26,10 @@ The tasks performed are:
 from operator import attrgetter
 
 import tables as tb
+
+from .. database       import load_db
+from .. database.load_db       import dbdet
+
 from .. core.system_of_units_c import units
 from .. reco                   import tbl_functions        as tbl
 from .. io  .         hits_io  import          hits_writer
@@ -50,7 +54,7 @@ from .  components import build_pointlike_event  as build_pointlike_event_
 def penthesilea(files_in, file_out, compression, event_range, print_mod, run_number,
                 drift_v, rebin,
                 s1_nmin, s1_nmax, s1_emin, s1_emax, s1_wmin, s1_wmax, s1_hmin, s1_hmax, s1_ethr,
-                s2_nmin, s2_nmax, s2_emin, s2_emax, s2_wmin, s2_wmax, s2_hmin, s2_hmax, s2_ethr, s2_nsipmmin, s2_nsipmmax,
+                s2_nmin, s2_nmax, s2_emin, s2_emax, s2_wmin, s2_wmax, s2_hmin, s2_hmax, s2_ethr, s2_nsipmmin, s2_nsipmmax, db_detector,
                 slice_reco_params  = dict(),
                 global_reco_params = dict()):
     #  slice_reco_params are qth, qlm, lm_radius, new_lm_radius, msipm used for hits reconstruction
@@ -64,12 +68,12 @@ def penthesilea(files_in, file_out, compression, event_range, print_mod, run_num
     pmap_passed           = df.map(attrgetter("passed"), args="selector_output", out="pmap_passed")
     pmap_select           = df.count_filter(bool, args="pmap_passed")
 
-    reco_algo_slice       = compute_xy_position(**slice_reco_params)
-    build_hits            = df.map(hit_builder(run_number, drift_v, reco_algo_slice, rebin),
+    reco_algo_slice       = compute_xy_position(db_detector, **slice_reco_params)
+    build_hits            = df.map(hit_builder(db_detector, run_number, drift_v, reco_algo_slice, rebin),
                                    args = ("pmap", "selector_output", "event_number", "timestamp"),
                                    out  = "hits"                                                 )
-    reco_algo_global      = compute_xy_position(**global_reco_params)
-    build_pointlike_event = df.map(build_pointlike_event_(run_number, drift_v, reco_algo_global),
+    reco_algo_global      = compute_xy_position(db_detector, **global_reco_params)
+    build_pointlike_event = df.map(build_pointlike_event_(db_detector, run_number, drift_v, reco_algo_global),
                                    args = ("pmap", "selector_output", "event_number", "timestamp"),
                                    out  = "pointlike_event"                                      )
 

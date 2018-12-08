@@ -38,6 +38,9 @@ from operator import attrgetter
 
 import tables as tb
 
+from .. database       import load_db
+from .. database.load_db       import dbdet
+
 from .. core.system_of_units_c import units
 from .. reco                   import tbl_functions as tbl
 from .. io.         kdst_io    import            kr_writer
@@ -60,7 +63,7 @@ from .  components import build_pointlike_event  as build_pointlike_event_
 def dorothea(files_in, file_out, compression, event_range, print_mod, run_number,
              drift_v,
              s1_nmin, s1_nmax, s1_emin, s1_emax, s1_wmin, s1_wmax, s1_hmin, s1_hmax, s1_ethr,
-             s2_nmin, s2_nmax, s2_emin, s2_emax, s2_wmin, s2_wmax, s2_hmin, s2_hmax, s2_ethr, s2_nsipmmin, s2_nsipmmax,
+             s2_nmin, s2_nmax, s2_emin, s2_emax, s2_wmin, s2_wmax, s2_hmin, s2_hmax, s2_ethr, s2_nsipmmin, s2_nsipmmax, db_detector,
              global_reco_params=dict()):
     # global_reco_params are qth, qlm, lm_radius, new_lm_radius, msipm
     # qlm           =  0 * pes every Cluster must contain at least one SiPM with charge >= qlm
@@ -69,6 +72,9 @@ def dorothea(files_in, file_out, compression, event_range, print_mod, run_number
     #                          new_lm_radius of new_local_maximum
     # msipm         =  1       minimum number of SiPMs in a Cluster
 
+    print(dbdet.new)
+    print(db_detector)
+    
     classify_peaks        = fl.map(peak_classifier(**locals()),
                                    args = "pmap",
                                    out  = "selector_output")
@@ -76,8 +82,8 @@ def dorothea(files_in, file_out, compression, event_range, print_mod, run_number
     pmap_passed           = fl.map(attrgetter("passed"), args="selector_output", out="pmap_passed")
     pmap_select           = fl.count_filter(bool, args="pmap_passed")
 
-    reco_algo             = compute_xy_position(**global_reco_params)
-    build_pointlike_event = fl.map(build_pointlike_event_(run_number, drift_v, reco_algo),
+    reco_algo             = compute_xy_position(db_detector, **global_reco_params)
+    build_pointlike_event = fl.map(build_pointlike_event_(db_detector, run_number, drift_v, reco_algo),
                                    args = ("pmap", "selector_output", "event_number", "timestamp"),
                                    out  = "pointlike_event"                                       )
 
