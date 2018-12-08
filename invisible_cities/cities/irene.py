@@ -79,7 +79,7 @@ def irene(files_in, file_out, compression, event_range, print_mod, run_number,
                               out  = "cwf")
 
     # Corrected WaveForm to Calibrated Corrected WaveForm
-    cwf_to_ccwf      = fl.map(calibrate_pmts(run_number, n_mau, thr_mau),
+    cwf_to_ccwf      = fl.map(calibrate_pmts(db_detector, run_number, n_mau, thr_mau),
                               args = "cwf",
                               out  = ("ccwfs", "ccwfs_mau", "cwf_sum", "cwf_sum_mau"))
 
@@ -89,11 +89,11 @@ def irene(files_in, file_out, compression, event_range, print_mod, run_number,
                               out  = ("s1_indices", "s2_indices", "s2_energies"))
 
     # Remove baseline and calibrate SiPMs
-    sipm_rwf_to_cal  = fl.map(calibrate_sipms(run_number, sipm_thr),
+    sipm_rwf_to_cal  = fl.map(calibrate_sipms(db_detector, run_number, sipm_thr),
                               item = "sipm")
 
     # Build the PMap
-    compute_pmap     = fl.map(build_pmap(run_number,
+    compute_pmap     = fl.map(build_pmap(db_detector, run_number,
                                          s1_lmax, s1_lmin, s1_rebin_stride, s1_stride, s1_tmax, s1_tmin,
                                          s2_lmax, s2_lmin, s2_rebin_stride, s2_stride, s2_tmax, s2_tmin, thr_sipm_s2),
                               args = ("ccwfs", "s1_indices", "s2_indices", "sipm"),
@@ -118,7 +118,7 @@ def irene(files_in, file_out, compression, event_range, print_mod, run_number,
         write_event_info_   = run_and_event_writer(h5out)
         write_mc_           = mc_info_writer      (h5out) if run_number <= 0 else (lambda *_: None)
         write_pmap_         = pmap_writer         (h5out, compression=compression)
-        write_trigger_info_ = trigger_writer      (h5out, get_number_of_active_pmts(run_number))
+        write_trigger_info_ = trigger_writer      (h5out, get_number_of_active_pmts(db_detector, run_number))
         write_indx_filter_  = event_filter_writer (h5out, "s12_indices", compression=compression)
         write_pmap_filter_  = event_filter_writer (h5out, "empty_pmap" , compression=compression)
 
@@ -158,7 +158,7 @@ def irene(files_in, file_out, compression, event_range, print_mod, run_number,
 
 
 
-def build_pmap(run_number,
+def build_pmap(db_detector, run_number,
                s1_lmax, s1_lmin, s1_rebin_stride, s1_stride, s1_tmax, s1_tmin,
                s2_lmax, s2_lmin, s2_rebin_stride, s2_stride, s2_tmax, s2_tmin, thr_sipm_s2):
     s1_params = dict(time        = minmax(min = s1_tmin,
@@ -185,7 +185,7 @@ def build_pmap(run_number,
     return build_pmap
 
 
-def get_number_of_active_pmts(run_number):
+def get_number_of_active_pmts(db_detector, run_number):
     datapmt = load_db.DataPMT(db_detector, run_number)
     return np.count_nonzero(datapmt.Active.values.astype(bool))
 
